@@ -106,9 +106,6 @@ const createWindow = () => {
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
   }
-
-  // 开发模式打开 DevTools 方便调试
-  mainWindow.webContents.openDevTools();
 };
 
 // ── 生命周期 ─────────────────────────────────────────────

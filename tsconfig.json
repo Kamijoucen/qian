@@ -13,5 +13,5 @@
     "resolveJsonModule": true,
     "jsx": "preserve"
   },
-  "include": ["src/**/*", "src/**/*.vue", "forge.env.d.ts"]
+  "include": ["src/**/*", "src/**/*.vue"]
 }

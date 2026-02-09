@@ -26,17 +26,40 @@
 - **Electron 40** + **Vue 3** + **TypeScript 5**
 - **Naive UI 2** 组件库
 - **Pinia** 状态管理
-- **Electron Forge** + **Vite 5** 构建
+- **Electron Forge** → **electron-builder** + **NSIS** 打包
+- **Vite 5** + **vite-plugin-electron** 构建
 
 ## 开发
 
 ```bash
 npm install        # 安装依赖
-npm run start      # 开发模式启动（支持热更新）
-npm run package    # 打包应用
-npm run make       # 构建安装包
+npm run dev        # 开发模式启动（支持热更新）
+npm run build      # 仅构建（不打包安装程序）
 npm run lint       # ESLint 检查
 ```
+
+## 打包安装程序
+
+使用 electron-builder + NSIS 生成各平台安装包，产物输出到 `release/` 目录。
+
+> **注意**：只能在对应操作系统上打对应平台的包。跨平台打包需借助 CI（如 GitHub Actions）。
+
+| 目标平台 | 命令 | 产物格式 |
+|---|---|---|
+| Windows | `npm run dist:win` | `.exe`（NSIS 安装包，支持自定义安装路径） |
+| macOS | `npm run dist:mac` | `.dmg` + `.zip` |
+| Linux | `npm run dist:linux` | `.AppImage` + `.deb` |
+| 当前平台 | `npm run dist` | 自动检测 |
+
+### Windows 安装包特性
+
+- 中文安装界面
+- 支持自定义安装路径
+- 自动创建桌面快捷方式和开始菜单
+
+### 自定义应用图标
+
+将图标文件放到 `build/icon.ico`（Windows）/ `build/icon.icns`（macOS）/ `build/icon.png`（Linux），然后在 `package.json` 的 `build.win` 中添加 `"icon": "build/icon.ico"` 即可。
 
 ## 数据目录
 

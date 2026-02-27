@@ -7,8 +7,8 @@
       </n-button>
       <n-text style="font-size: 20px; font-weight: bold">课题管理</n-text>
       <n-space>
-        <n-button size="small" secondary @click="handleExportReport">
-          导出周报
+        <n-button size="small" secondary @click="appStore.switchTo(AppView.SETTINGS)">
+          设置
         </n-button>
         <n-button type="primary" size="small" @click="openAddModal">
           + 添加课题
@@ -130,17 +130,13 @@
       </template>
     </n-modal>
 
-    <!-- 导出结果提示 -->
-    <n-modal v-model:show="showExportResult" preset="card" title="导出成功" style="width: 400px">
-      <n-text>周报已导出到：</n-text>
-      <n-text code style="display: block; margin-top: 8px; word-break: break-all">{{ exportPath }}</n-text>
-    </n-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { FormRules } from 'naive-ui';
+import { AppView } from '../types';
 import type { Project } from '../types';
 import { useAppStore } from '../stores/appStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -151,8 +147,6 @@ const projectStore = useProjectStore();
 const showAddModal = ref(false);
 const isEditing = ref(false);
 const editingId = ref('');
-const showExportResult = ref(false);
-const exportPath = ref('');
 
 const colorSwatches = [
   '#e43636', '#f57c00', '#ffb300', '#43a047',
@@ -231,14 +225,5 @@ async function handleRestore(id: string) {
 
 async function handleDelete(id: string) {
   await projectStore.deleteProject(id);
-}
-
-async function handleExportReport() {
-  try {
-    exportPath.value = await window.electronAPI.exportReport();
-    showExportResult.value = true;
-  } catch (e) {
-    console.error('导出周报失败', e);
-  }
 }
 </script>

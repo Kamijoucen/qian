@@ -14,6 +14,8 @@ export enum AppView {
   END_SESSION = 'END_SESSION',
   /** 课题管理 */
   MANAGE = 'MANAGE',
+  /** 设置页 */
+  SETTINGS = 'SETTINGS',
 }
 
 /** 课题状态 */
@@ -50,8 +52,10 @@ export interface PreWarmCard {
   createdAt: string;
 }
 
-/** 时间粒（专注周期） */
+/** 时间粒（专注周期），内部加 entityId 追踪 Forma 记录 */
 export interface Grain {
+  /** Forma Entity ID（首次创建后由服务端返回） */
+  entityId?: string;
   /** 锁定的课题 ID */
   projectId: string;
   /** 开始时间（ISO） */
@@ -62,13 +66,33 @@ export interface Grain {
   confirmed: boolean;
 }
 
+/** Forma 连接配置 */
+export interface FormaConfig {
+  /** Forma API Base URL，如 http://localhost:8888/api */
+  baseUrl: string;
+  /** 认证 Token */
+  token: string;
+}
+
 /** 主进程暴露给渲染进程的 IPC API */
 export interface ElectronAPI {
+  // ── Forma 数据操作 ──
   loadProjects: () => Promise<Project[]>;
-  saveProjects: (projects: Project[]) => Promise<void>;
+  createProject: (data: { name: string; color: string; progress?: string }) => Promise<Project>;
+  updateProject: (id: string, currentProject: Project, changes: Partial<Pick<Project, 'name' | 'color' | 'progress' | 'status' | 'drawHistory'>>) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+
   loadCards: () => Promise<PreWarmCard[]>;
-  saveCards: (cards: PreWarmCard[]) => Promise<void>;
+  createCard: (data: { projectId: string; nextAction: string; target: string; checkpoint: string }) => Promise<PreWarmCard>;
+
   loadGrain: () => Promise<Grain | null>;
-  saveGrain: (grain: Grain | null) => Promise<void>;
-  exportReport: () => Promise<string>;
+  saveGrain: (grain: Omit<Grain, 'entityId'>) => Promise<Grain>;
+  clearGrain: () => Promise<void>;
+
+  // ── 配置管理 ──
+  loadConfig: () => Promise<FormaConfig>;
+  saveConfig: (config: FormaConfig) => Promise<void>;
+
+  // ── Schema 初始化 ──
+  ensureSchemas: () => Promise<void>;
 }

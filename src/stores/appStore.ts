@@ -5,21 +5,25 @@ import { useGrainStore } from './grainStore';
 
 export const useAppStore = defineStore('app', () => {
   const currentView = ref<AppView>(AppView.IDLE);
-  /** 进入 MANAGE 之前的视图，用于返回 */
-  const previousView = ref<AppView>(AppView.IDLE);
+  /** 视图返回栈，用于 MANAGE / SETTINGS 等覆盖层的返回 */
+  const viewStack = ref<AppView[]>([]);
   /** 当前抽中的课题 ID（抽签后设置，避免反推） */
   const drawnProjectId = ref<string | null>(null);
 
   function switchTo(view: AppView) {
-    if (view === AppView.MANAGE) {
-      previousView.value = currentView.value;
+    if (view === AppView.MANAGE || view === AppView.SETTINGS) {
+      viewStack.value.push(currentView.value);
     }
     currentView.value = view;
   }
 
-  /** 返回管理页之前的视图 */
+  /** 返回上一个视图（从栈中弹出） */
   function goBack() {
-    currentView.value = previousView.value;
+    if (viewStack.value.length > 0) {
+      currentView.value = viewStack.value.pop()!;
+    } else {
+      currentView.value = AppView.IDLE;
+    }
   }
 
   /** 应用启动时调用：检查 grain 决定初始视图 */
@@ -38,5 +42,5 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  return { currentView, previousView, drawnProjectId, switchTo, goBack, init };
+  return { currentView, viewStack, drawnProjectId, switchTo, goBack, init };
 });

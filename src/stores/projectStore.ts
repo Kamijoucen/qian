@@ -9,41 +9,26 @@ export const useProjectStore = defineStore('project', () => {
     projects.value.filter((p) => p.status === 'active'),
   );
 
-  /** 从本地文件加载 */
+  /** 从 Forma 加载所有课题 */
   async function loadAll() {
     projects.value = await window.electronAPI.loadProjects();
   }
 
-  /** 持久化到本地文件（剥离响应式 Proxy 再传 IPC） */
-  async function saveAll() {
-    const raw = JSON.parse(JSON.stringify(projects.value));
-    await window.electronAPI.saveProjects(raw);
-  }
-
   /** 添加课题 */
   async function addProject(data: { name: string; color: string; progress?: string }) {
-    const now = new Date().toISOString();
-    const project: Project = {
-      id: crypto.randomUUID(),
-      name: data.name,
-      color: data.color,
-      status: 'active',
-      progress: data.progress ?? '',
-      drawHistory: [],
-      createdAt: now,
-      updatedAt: now,
-    };
+    const project = await window.electronAPI.createProject(data);
     projects.value.push(project);
-    await saveAll();
     return project;
   }
 
   /** 更新课题 */
-  async function updateProject(id: string, data: Partial<Pick<Project, 'name' | 'color' | 'progress' | 'status'>>) {
+  async function updateProject(id: string, data: Partial<Pick<Project, 'name' | 'color' | 'progress' | 'status' | 'drawHistory'>>) {
     const idx = projects.value.findIndex((p) => p.id === id);
     if (idx === -1) return;
+    const current = JSON.parse(JSON.stringify(projects.value[idx])) as Project;
+    await window.electronAPI.updateProject(id, current, data);
+    // 本地同步更新
     Object.assign(projects.value[idx], data, { updatedAt: new Date().toISOString() });
-    await saveAll();
   }
 
   /** 归档课题 */
@@ -53,8 +38,8 @@ export const useProjectStore = defineStore('project', () => {
 
   /** 删除课题 */
   async function deleteProject(id: string) {
+    await window.electronAPI.deleteProject(id);
     projects.value = projects.value.filter((p) => p.id !== id);
-    await saveAll();
   }
 
   /** 抽签：从 active 课题中随机选取一个 */
@@ -63,9 +48,8 @@ export const useProjectStore = defineStore('project', () => {
     if (pool.length === 0) return null;
     const idx = Math.floor(Math.random() * pool.length);
     const chosen = pool[idx];
-    chosen.drawHistory.push(new Date().toISOString());
-    chosen.updatedAt = new Date().toISOString();
-    await saveAll();
+    const newHistory = [...chosen.drawHistory, new Date().toISOString()];
+    await updateProject(chosen.id, { drawHistory: newHistory });
     return chosen;
   }
 
@@ -78,7 +62,6 @@ export const useProjectStore = defineStore('project', () => {
     projects,
     activeProjects,
     loadAll,
-    saveAll,
     addProject,
     updateProject,
     archiveProject,

@@ -1,33 +1,47 @@
 # Qian（签）
 
-**学习上下文管理器** — 解决"坐到电脑前不知道学什么"的决策瘫痪问题。
+随机抽签决定今天学什么，避免选择困难。抽到后锁定 1-4 天，专注一个课题。
 
-将多线程并行学习强制转为**单线程串行执行**，通过随机抽签 + 时间锁定消除决策疲劳。
+## 功能
 
-## 核心功能
+- 管理学习课题（名称、主题色、进度）
+- 随机抽签选课题，抽完锁定不可换
+- 预热卡片：记录下一步行动、最小目标、上次停在哪
+- 时间粒锁定：1-4 天内只做这一件事
+- 数据存储在 Forma 服务端
 
-- **课题池管理** — 增删改查学习课题，每个课题带名称、主题色、进度描述
-- **抽签引擎** — 一键随机抽取课题，动画展示结果，抽完不可反悔
-- **预热卡片** — 每个课题绑定"下一步行动 / 最小目标 / 上次停在哪"，抽签后自动弹出，消除启动摩擦
-- **时间粒锁定** — 选择 1-4 天专注周期，周期内锁定当前课题，屏蔽切换冲动
-- **本地存储** — 数据存在 `~/qian-data/`，JSON 文件，零配置，无需后端
-- **Markdown 周报导出** — 一键导出最近 7 天的学习记录
+## 流程
 
-## 使用流程
-
-1. 打开应用 → 看到抽签按钮（或上次未完成的课题）
-2. 点击抽签 → 随机选出课题 → 选择专注天数 → 确认
-3. 弹出预热卡片 → 点击"开始执行" → 进入学习
-4. 学习结束 → 记录进度 + 填写下次预热卡片
-5. 下次打开 → 直接展示当前课题和预热卡片，无需重新抽签
+1. 首次启动，配置 Forma 服务地址和令牌
+2. 添加课题 → 抽签 → 选专注天数 → 开始学习
+3. 学习结束，记录进度，填下次预热卡片
+4. 下次打开，直接展示当前课题，无需重新抽签
 
 ## 技术栈
 
 - **Electron 40** + **Vue 3** + **TypeScript 5**
 - **Naive UI 2** 组件库
 - **Pinia** 状态管理
-- **Electron Forge** → **electron-builder** + **NSIS** 打包
+- **Forma** 远程存储服务（App code: `qian`）
+- **electron-builder** + **NSIS** 打包
 - **Vite 5** + **vite-plugin-electron** 构建
+
+## 存储架构
+
+数据通过 Forma HTTP API 存储在远程服务端，本地仅保留连接配置文件：
+
+```
+~/qian-data/
+  forma-config.json      # Forma 服务地址与认证令牌
+```
+
+Forma 中的数据结构（App code: `qian`）：
+
+| Schema | 说明 | 关键字段 |
+|--------|------|----------|
+| `project` | 学习课题 | name, color, status, progress, drawHistory |
+| `pre_warm_card` | 预热卡片 | projectId, nextAction, target, checkpoint |
+| `grain` | 时间粒（单例） | projectId, startTime, durationDays, confirmed |
 
 ## 开发
 
@@ -46,32 +60,10 @@ npm run lint       # ESLint 检查
 
 | 目标平台 | 命令 | 产物格式 |
 |---|---|---|
-| Windows | `npm run dist:win` | `.exe`（NSIS 安装包，支持自定义安装路径） |
+| Windows | `npm run dist:win` | `.exe`（NSIS 安装包） |
 | macOS | `npm run dist:mac` | `.dmg` + `.zip` |
 | Linux | `npm run dist:linux` | `.AppImage` + `.deb` |
 | 当前平台 | `npm run dist` | 自动检测 |
-
-### Windows 安装包特性
-
-- 中文安装界面
-- 支持自定义安装路径
-- 自动创建桌面快捷方式和开始菜单
-
-### 自定义应用图标
-
-将图标文件放到 `build/icon.ico`（Windows）/ `build/icon.icns`（macOS）/ `build/icon.png`（Linux），然后在 `package.json` 的 `build.win` 中添加 `"icon": "build/icon.ico"` 即可。
-
-## 数据目录
-
-运行后自动创建 `~/qian-data/`：
-
-```
-~/qian-data/
-  projects.json          # 课题列表
-  cards.json             # 预热卡片
-  grain.json             # 当前时间粒锁定状态
-  weekly-report-*.md     # 导出的周报
-```
 
 ## License
 

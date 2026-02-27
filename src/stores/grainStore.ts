@@ -26,33 +26,27 @@ export const useGrainStore = defineStore('grain', () => {
     return `还剩 ${days} 天`;
   });
 
-  /** 从本地文件加载 */
+  /** 从 Forma 加载 Grain（单例） */
   async function load() {
     grain.value = await window.electronAPI.loadGrain();
   }
 
-  /** 持久化（剥离响应式 Proxy 再传 IPC） */
-  async function save() {
-    const raw = grain.value ? JSON.parse(JSON.stringify(grain.value)) : null;
-    await window.electronAPI.saveGrain(raw);
-  }
-
-  /** 确认抽签结果，创建 grain */
+  /** 确认抽签结果，创建/更新 grain */
   async function confirm(projectId: string, durationDays: number) {
-    grain.value = {
+    const result = await window.electronAPI.saveGrain({
       projectId,
       startTime: new Date().toISOString(),
       durationDays,
       confirmed: true,
-    };
-    await save();
+    });
+    grain.value = result;
   }
 
   /** 清除 grain（过期或手动） */
   async function clear() {
+    await window.electronAPI.clearGrain();
     grain.value = null;
-    await save();
   }
 
-  return { grain, isActive, remainingText, load, save, confirm, clear };
+  return { grain, isActive, remainingText, load, confirm, clear };
 });

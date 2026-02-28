@@ -75,8 +75,12 @@ import { ref, onMounted, computed } from 'vue';
 import type { FormRules } from 'naive-ui';
 import { AppView } from '../types';
 import { useAppStore } from '../stores/appStore';
+import { useProjectStore } from '../stores/projectStore';
+import { useCardStore } from '../stores/cardStore';
 
 const appStore = useAppStore();
+const projectStore = useProjectStore();
+const cardStore = useCardStore();
 
 const formRef = ref();
 const saving = ref(false);
@@ -133,7 +137,14 @@ async function handleSave() {
     });
     // 保存后尝试初始化 Schema 并进入主流程
     await window.electronAPI.ensureSchemas();
-    appStore.switchTo(AppView.IDLE);
+
+    // 加载所有业务数据（与 App.vue onMounted 保持一致）
+    await Promise.all([
+      projectStore.loadAll(),
+      cardStore.loadAll(),
+    ]);
+    // 根据 grain 状态决定跳转到 IDLE 或 ACTIVE
+    await appStore.init();
   } catch (e) {
     console.error('保存配置失败', e);
     testResult.value = false;
